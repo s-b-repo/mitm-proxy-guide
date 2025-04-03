@@ -2,7 +2,7 @@ from mitmproxy import http
 import json
 
 API_TOKEN_KEY = "api_access_token"
-API_TOKEN_VALUE = "43295y2957ty48fgh2946f"
+API_TOKEN_VALUE = "key"
 
 def request(flow: http.HTTPFlow) -> None:
     # Only proceed if HTTPS

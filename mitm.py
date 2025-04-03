@@ -1,29 +1,29 @@
 from mitmproxy import http
 import json
 
-API_KEY = "sk-1234567890abcdef"
-TARGET_DOMAIN = "target-api.com"
+API_TOKEN_KEY = "api_access_token"
+API_TOKEN_VALUE = "43295y2957ty48fgh2946f"
 
 def request(flow: http.HTTPFlow) -> None:
-    # Only work on target domain and HTTPS
-    if flow.request.scheme != "https" or TARGET_DOMAIN not in flow.request.host:
+    # Only proceed if HTTPS
+    if flow.request.scheme != "https":
         return
 
     headers = flow.request.headers
 
-    # Add API key to header only if missing
-    if "Authorization" not in headers:
-        headers["Authorization"] = f"Bearer {API_KEY}"
+    # 1. Inject token into headers (only if not present)
+    if API_TOKEN_KEY not in headers:
+        headers[API_TOKEN_KEY] = API_TOKEN_VALUE
 
-    # Add API key to JSON body if applicable
-    if "application/json" in headers.get("Content-Type", ""):
+    # 2. Inject token into JSON body (only if it's JSON and key is missing)
+    content_type = headers.get("Content-Type", "")
+    if "application/json" in content_type:
         try:
-            raw = flow.request.get_text()
-            # Skip if empty or invalid JSON
-            if raw and raw.strip()[0] in ["{", "["]:
-                data = json.loads(raw)
-                if isinstance(data, dict) and "api_key" not in data:
-                    data["api_key"] = API_KEY
-                    flow.request.set_text(json.dumps(data))
+            body = flow.request.get_text()
+            if body and body.strip()[0] in ['{', '[']:
+                json_body = json.loads(body)
+                if isinstance(json_body, dict) and API_TOKEN_KEY not in json_body:
+                    json_body[API_TOKEN_KEY] = API_TOKEN_VALUE
+                    flow.request.set_text(json.dumps(json_body))
         except Exception:
-            pass  # Skip silently if any issue
+            pass  # Silently skip if any issue
